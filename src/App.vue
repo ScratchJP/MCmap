@@ -2,6 +2,7 @@
 import { onMounted } from "vue";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import PositionOverlay from "./components/PositionOverlay.vue"
 
 onMounted(() => {
   const posMapToMC = (position) => {
@@ -94,6 +95,9 @@ onMounted(() => {
 
 <template>
   <div id="map"></div>
+  <div class="map-overlay">
+    <PositionOverlay></PositionOverlay>
+  </div>
 </template>
 
 <style scoped>
@@ -102,5 +106,8 @@ onMounted(() => {
   background: #000;
   image-rendering: pixelated;
   user-select: none;
+}
+.map-overlay {
+  position: fixed;
 }
 </style>
