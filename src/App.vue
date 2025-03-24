@@ -1,8 +1,24 @@
 <script setup>
-import { onMounted } from "vue";
+import { onMounted, ref } from "vue";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+
+import markers from './data/markers.json';
+
 import PositionOverlay from "./components/PositionOverlay.vue"
+
+const x = ref(0), z = ref(0);
+const mouseX = ref(null), mouseZ = ref(null);
+
+const icon = {
+  marker: L.icon({
+    iconUrl: "./assets/icon/marker.png",
+    iconSize: 32,
+    iconAnchor: [16, 32],
+    popupAnchor: [0, -24],
+    tooltipAnchor: [0, -24],
+  }),
+}
 
 onMounted(() => {
   const posMapToMC = (position) => {
@@ -31,8 +47,8 @@ onMounted(() => {
     parseFloat(params.get('x')) || 0,
     parseFloat(params.get('z')) || 0,
   ])
-  let x = pos[0];
-  let z = pos[1];
+  x.value = pos[0];
+  z.value = pos[1];
   let zoom = parseFloat(params.get('zoom')) ||
     Math.log2(parseFloat(params.get('s')) * 2) + 2 || 3;
   let dim = params.get('dim') || "overworld";
@@ -68,25 +84,51 @@ onMounted(() => {
   
   const map = L.map("map", {
     crs: L.CRS.Simple,
-    center: [x, z],
+    center: [x.value, z.value],
     zoom: zoom,
     layers: [layers[dim]]
   });
 
-  L.marker(posMCToMap([0, 0]))
-    .bindPopup("0, 0")
-    .openPopup()
-    .addTo(map);
-  L.marker(posMCToMap([-510, -190]))
-    .bindPopup("阿斑市")
+  L.marker(posMCToMap([0, 0]), {
+    icon: icon.marker
+  }).bindPopup("0, 0")
     .openPopup()
     .addTo(map);
 
-  map.on('moveend zoomend', () => {
+  markers.forEach(item => {
+    L.marker(posMCToMap(item.position), {
+      icon: icon.marker
+    }).bindPopup(`${item.name}<br><small>${item.position.join(' ')}</small>`)
+      .openPopup()
+      .addTo(map);
+  })
+  
+
+  const updatePosition = () => {
     const c = map.getCenter();
     const pos = posMapToMC([c.lat, c.lng]);
-    x = pos[0];
-    z = pos[1];
+    x.value = pos[0];
+    z.value = pos[1];
+    return pos;
+  }
+
+  const updateMousePos = event => {
+    let mousePos;
+    if (event.originalEvent.touches) {
+      const touch = event.originalEvent.touches[0];
+      mousePos = map.mouseEventToLatLng(touch);
+    } else {
+      mousePos = map.mouseEventToLatLng(event.originalEvent);
+    }
+    const pos = posMapToMC([mousePos.lat, mousePos.lng]);
+    mouseX.value = pos[0], mouseZ.value = pos[1];
+  }
+
+  map.on('move zoom', updatePosition)
+  map.on('mousemove touchmove', updateMousePos)
+
+  map.on('moveend zoomend', () => {
+    const pos = updatePosition();
     zoom = map.getZoom();
     updateParams(pos, zoom, dim);
   })
@@ -96,7 +138,12 @@ onMounted(() => {
 <template>
   <div id="map"></div>
   <div class="map-overlay">
-    <PositionOverlay></PositionOverlay>
+    <div class="overlay-top">
+      <PositionOverlay
+        :x="mouseX ?? x"
+        :z="mouseZ ?? z"
+      />
+    </div>
   </div>
 </template>
 
@@ -106,8 +153,25 @@ onMounted(() => {
   background: #000;
   image-rendering: pixelated;
   user-select: none;
+  font-family: var(--f-default);
 }
 .map-overlay {
   position: fixed;
+  z-index: 500;
+  top: 0; left: 0;
+  width: 100dvw;
+  height: 100dvh;
+  user-select: none;
+  pointer-events: none;
+}
+.overlay-top {
+  position: absolute;
+  top: 0; left: 0;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-start;
 }
 </style>
