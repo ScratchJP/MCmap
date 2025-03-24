@@ -20,20 +20,20 @@ const icon = {
     tooltipAnchor: [0, -24],
   }),
 }
+const posMapToMC = (position) => {
+  return [
+    position[1] * 8,
+    position[0] * -8
+  ];
+}
+const posMCToMap = (position) => {
+  return [
+    position[1] / -8, 
+    position[0] / 8
+  ];
+}
 
 onMounted(() => {
-  const posMapToMC = (position) => {
-    return [
-      position[1] * 8 - .5,
-      position[0] * -8 + .5
-    ];
-  }
-  const posMCToMap = (position) => {
-    return [
-      (position[1] - .5) / -8, 
-      (position[0] + .5) / 8
-    ];
-  }
   
   const params = new URLSearchParams(location.search);
   const updateParams = (pos, zoom, dim) => {
@@ -45,8 +45,8 @@ onMounted(() => {
     history.replaceState(null, '', `?${params.toString()}`);
   }
   const pos = posMCToMap([
-    parseFloat(params.get('x')) || 0,
-    parseFloat(params.get('z')) || 0,
+    parseFloat(params.get('x')) || 0.5,
+    parseFloat(params.get('z')) || 0.5,
   ])
   x.value = pos[0];
   z.value = pos[1];
@@ -92,7 +92,8 @@ onMounted(() => {
 
   markers.filter(i => i.dimension === dimID[dim.value])
     .forEach(item => {
-      L.marker(posMCToMap(item.position), {
+      const pos = item.position;
+      L.marker(posMCToMap([pos[0] + .5, pos[1] - .5]), {
         icon: icon.marker
       }).bindPopup(`<center>${item.name}<br><small>${item.position.join(' ')}</small></center>`)
         .openPopup()
@@ -136,8 +137,8 @@ onMounted(() => {
   <div class="map-overlay">
     <div class="overlay-top">
       <PositionOverlay
-        :x="mouseX ?? x"
-        :z="mouseZ ?? z"
+        :x="mouseX ?? posMapToMC([0, z])[0]"
+        :z="mouseZ ?? posMapToMC([x, 0])[1]"
       />
     </div>
   </div>
