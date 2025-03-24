@@ -12,8 +12,6 @@ rg(pUX, "UXRCF市", 872, 269, 0);
 rg(pLi, "凛市", -6, 1420, 0);
 rg(psm, "すいめろ島", 3126, -261, 0);`;
 
-const j = [];
-
 const r = mrk.split(/\r?\n/g).map(i=>i.replace(/^rg\([^,]+, "/gm,"").replace(/, 0\);$/,"").split(/, ?/g).map(j=>j.replace(/"$/,""))).map(i=>{return{name:i[0],position:[parseFloat(i[1]),parseFloat(i[2])],dimension:0}})
 
 fs.writeFileSync('./mig.txt', JSON.stringify(r, null, 2))

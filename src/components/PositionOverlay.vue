@@ -16,8 +16,7 @@ defineProps({
 <style scoped>
 .panel {
   text-align: center;
-  padding: 8px;
+  padding: 4px 8px;
   background: #000000e0;
-  padding-top: 4px;
 }
 </style>

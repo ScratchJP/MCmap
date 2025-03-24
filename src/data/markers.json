@@ -1,6 +1,6 @@
 [
   {
-    "name": "ScJP村",
+    "name": "ScJP市",
     "position": [
       10, -2
     ],
@@ -73,6 +73,20 @@
     "name": "すいめろ島",
     "position": [
       3126, -261
+    ],
+    "dimension": 0
+  },
+  {
+    "name": "ドラウンドトラップ",
+    "position": [
+      -1035, -100
+    ],
+    "dimension": 0
+  },
+  {
+    "name": "イカトラップ",
+    "position": [
+      -657, 1326
     ],
     "dimension": 0
   }

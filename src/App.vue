@@ -2,12 +2,13 @@
 import { onMounted, ref } from "vue";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { dimID } from './definitions/index';
 
 import markers from './data/markers.json';
 
 import PositionOverlay from "./components/PositionOverlay.vue"
 
-const x = ref(0), z = ref(0);
+const x = ref(0), z = ref(0), dim = ref("overworld");
 const mouseX = ref(null), mouseZ = ref(null);
 
 const icon = {
@@ -51,9 +52,9 @@ onMounted(() => {
   z.value = pos[1];
   let zoom = parseFloat(params.get('zoom')) ||
     Math.log2(parseFloat(params.get('s')) * 2) + 2 || 3;
-  let dim = params.get('dim') || "overworld";
+  dim.value = params.get('dim') || "overworld";
 
-  updateParams(posMapToMC(pos), zoom, dim);
+  updateParams(posMapToMC(pos), zoom, dim.value);
 
   const layers = {
     overworld: L.tileLayer("/map/{z}/overworld/{x}_{y}.png", {
@@ -86,22 +87,17 @@ onMounted(() => {
     crs: L.CRS.Simple,
     center: [x.value, z.value],
     zoom: zoom,
-    layers: [layers[dim]]
+    layers: [layers[dim.value]]
   });
 
-  L.marker(posMCToMap([0, 0]), {
-    icon: icon.marker
-  }).bindPopup("0, 0")
-    .openPopup()
-    .addTo(map);
-
-  markers.forEach(item => {
-    L.marker(posMCToMap(item.position), {
-      icon: icon.marker
-    }).bindPopup(`${item.name}<br><small>${item.position.join(' ')}</small>`)
-      .openPopup()
-      .addTo(map);
-  })
+  markers.filter(i => i.dimension === dimID[dim.value])
+    .forEach(item => {
+      L.marker(posMCToMap(item.position), {
+        icon: icon.marker
+      }).bindPopup(`<center>${item.name}<br><small>${item.position.join(' ')}</small></center>`)
+        .openPopup()
+        .addTo(map);
+    });
   
 
   const updatePosition = () => {
@@ -130,7 +126,7 @@ onMounted(() => {
   map.on('moveend zoomend', () => {
     const pos = updatePosition();
     zoom = map.getZoom();
-    updateParams(pos, zoom, dim);
+    updateParams(pos, zoom, dim.value);
   })
 });
 </script>
