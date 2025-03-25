@@ -1,3 +1,3 @@
-# ScJPMC map
-new version of Scratch JP Minecraft Server Map.\
-have no idea why did i used Vue.
+# ScJPMC map / ScJPマイクラ鯖マップ
+新バージョンの鯖マップです。
+旧バージョン：[ScratchJP/mcscrmap_classic](https://github.com/scratchjp/mcscrmap_classic)

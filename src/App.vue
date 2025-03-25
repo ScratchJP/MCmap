@@ -61,7 +61,7 @@ onMounted(() => {
       tileSize: 256,
       noWrap: true,
       maxZoom: 8,
-      minNativeZoom: 2,
+      minNativeZoom: 1,
       maxNativeZoom: 5,
       attribution: "Overworld - ScJPMC World Map exported from Xaero's World Map mod"
     }),
@@ -76,6 +76,7 @@ onMounted(() => {
     end: L.tileLayer("/map/{z}/end/{x}_{y}.png", {
       tileSize: 256,
       noWrap: true,
+      minZoom: -1,
       maxZoom: 8,
       minNativeZoom: 2,
       maxNativeZoom: 5,
