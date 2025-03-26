@@ -97,13 +97,17 @@ onMounted(() => {
     }
     return i.dimension === dimID[dim.value]
   }).forEach(item => {
-      const pos = item.position;
-      L.marker(posMCToMap([pos[0] + .5, pos[1] - .5]), {
-        icon: icon.marker
-      }).bindPopup(`<center>${item.name}<br><small>${item.position.join(' ')}</small></center>`)
-        .openPopup()
-        .addTo(map);
-    });
+    const pos = item.position;
+    const posDevide = pos[2] === -1 ? 8 : 1;
+    L.marker(posMCToMap([
+      pos[0] / posDevide + .5,
+      pos[1] / posDevide - .5
+    ]), {
+      icon: icon.marker
+    }).bindPopup(`<center>${item.name}<br><small>${item.position.join(' ')}</small></center>`)
+      .openPopup()
+      .addTo(map);
+  });
   
 
   const updatePosition = () => {
