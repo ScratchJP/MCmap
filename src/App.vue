@@ -91,8 +91,12 @@ onMounted(() => {
     layers: [layers[dim.value]]
   });
 
-  markers.filter(i => i.dimension === dimID[dim.value])
-    .forEach(item => {
+  markers.filter(i => {
+    if (Array.isArray(i)) {
+      return i.dimension.includes(dimID[dim.value])
+    }
+    return i.dimension === dimID[dim.value]
+  }).forEach(item => {
       const pos = item.position;
       L.marker(posMCToMap([pos[0] + .5, pos[1] - .5]), {
         icon: icon.marker
