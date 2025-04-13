@@ -1,4 +1,4 @@
-[
+export default [
   {
     "name": "ScJP市",
     "position": [
@@ -99,5 +99,12 @@
       -657, 1326
     ],
     "dimension": 0
+  },
+  {
+    "name": "エンダーマントラップ",
+    "position": [
+      246, 0
+    ],
+    "dimension": 1
   }
 ]

@@ -4,9 +4,10 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { dimID } from './definitions/index';
 
-import markers from './data/markers.json';
+import markers from './data/markers.js';
 
 import PositionOverlay from "./components/PositionOverlay.vue"
+import DimensionToggle from "./components/DimensionToggle.vue";
 
 const x = ref(0), z = ref(0), dim = ref("overworld");
 const mouseX = ref(null), mouseZ = ref(null);
@@ -32,9 +33,29 @@ const posMCToMap = (position) => {
     position[0] / 8
   ];
 }
+let dimToggle = () => {};
+const dimensions = [
+  {
+    icon: "/assets/block/grass_block.png",
+    name: "Overworld",
+    id: 0,
+  },
+  {
+    icon: "/assets/block/netherrack.png",
+    name: "The Nether",
+    id: -1,
+  },
+  {
+    icon: "/assets/block/end_stone.png",
+    name: "The End",
+    id: 1,
+  },
+];
+
 
 onMounted(() => {
-  
+  const positions = {};
+
   const params = new URLSearchParams(location.search);
   const updateParams = (pos, zoom, dim) => {
     params.delete("s");
@@ -71,7 +92,7 @@ onMounted(() => {
       maxZoom: 8,
       minNativeZoom: 2,
       maxNativeZoom: 5,
-      attribution: "Nether - ScJPMC World Map exported from Xaero's World Map mod"
+      attribution: "The Nether - ScJPMC World Map exported from Xaero's World Map mod"
     }),
     end: L.tileLayer("/map/{z}/end/{x}_{y}.png", {
       tileSize: 256,
@@ -101,7 +122,7 @@ onMounted(() => {
     const posDevide = pos[2] === -1 ? 8 : 1;
     L.marker(posMCToMap([
       pos[0] / posDevide + .5,
-      pos[1] / posDevide - .5
+      pos[1] / posDevide + .5
     ]), {
       icon: icon.marker
     }).bindPopup(`<center>${item.name}<br><small>${item.position.join(' ')}</small></center>`)
@@ -130,6 +151,37 @@ onMounted(() => {
     mouseX.value = pos[0], mouseZ.value = pos[1];
   }
 
+  dimToggle = (id) => {
+    const currentDim = dimID[dim.value]
+    if (currentDim === id) return;
+    positions[currentDim] = [x.value, z.value];
+    console.log(JSON.stringify(positions,null,2))
+
+    if (currentDim === 0 && id === -1) {
+      map.setView(posMCToMap(
+        [x.value / 8, z.value / 8]
+      ))
+    } else if (currentDim === -1 && id === 0) {
+      map.setView(posMCToMap(
+        [x.value * 8, z.value * 8]
+      ))
+    } else {
+      map.setView(posMCToMap([
+        positions[id]?.at(0) ?? 0,
+        positions[id]?.at(1) ?? 0,
+      ]))
+    }
+    const newDimName = Object.entries(dimID).find(i => i[1] === id)?.at(0);
+
+    map.removeLayer(layers[dim.value]);
+    map.addLayer(layers[newDimName]);
+
+    dim.value = newDimName;
+    const pos = updatePosition();
+    zoom = map.getZoom();
+    updateParams(pos, zoom, dim.value);
+  }
+
   map.on('move zoom', updatePosition)
   map.on('mousemove touchmove', updateMousePos)
 
@@ -150,10 +202,18 @@ onMounted(() => {
         :z="mouseZ ?? posMapToMC([x, 0])[1]"
       />
     </div>
+    <div class="overlay-top overlay-right">
+      <div class="dimension-toggler overlay-interactable">
+        <DimensionToggle v-for="dim in dimensions"
+          :icon="dim.icon"
+          :name="dim.name"
+          @click="dimToggle(dim.id)"
+        />
+      </div>
+    </div>
   </div>
 </template>
-
-<style scoped>
+<style>
 #map {
   height: 100dvh;
   background: #000;
@@ -167,8 +227,12 @@ onMounted(() => {
   top: 0; left: 0;
   width: 100dvw;
   height: 100dvh;
+  align-items: center;
   user-select: none;
   pointer-events: none;
+}
+.overlay-interactable {
+  pointer-events: auto;
 }
 .overlay-top {
   position: absolute;
@@ -179,5 +243,30 @@ onMounted(() => {
   flex-wrap: wrap;
   justify-content: center;
   align-items: flex-start;
+}
+.overlay-right {
+  position: absolute;
+  top: 0; right: 0;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  flex-wrap: wrap;
+  justify-content: end;
+}
+.dimension-toggler {
+  display: flex;
+  flex-direction: column;
+  margin: 10px;
+  border: 2px solid rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+.dimension-toggler a:first-child {
+  border-top-left-radius:  2px; 
+  border-top-right-radius: 2px;
+}
+.dimension-toggler a:last-child {
+  border-bottom: none;
+  border-bottom-left-radius:  2px; 
+  border-bottom-right-radius: 2px;
 }
 </style>

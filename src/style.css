@@ -1,10 +1,16 @@
 @font-face {
   font-family: Lixeld;
-  src: url("/font/lixeld.ttf");
+  src: url("/font/lixeld.woff2") format("woff2"),
+    url("/font/lixeld.woff") format("woff");
+}
+@font-face {
+  font-family: "Unifont-JP";
+  src: url("/font/unifont_jp.woff2") format("woff2"),
+    url("/font/unifont_jp.woff") format("woff");
 }
 
 :root {
-  --f-default: Lixeld, Consolas, Inconsolata, Ubuntu, 'Noto Sans JP', 'M PLUS Rounded 1c', monospace;
+  --f-default: Lixeld, Unifont-JP, Consolas, Inconsolata, Ubuntu, 'Noto Sans JP', 'M PLUS Rounded 1c', monospace;
 }
 
 :root {
