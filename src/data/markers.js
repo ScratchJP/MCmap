@@ -1,3 +1,5 @@
+import { dimID as dim } from '../definitions/index.js'
+
 export default [
   {
     "name": "ScJP市",
@@ -105,6 +107,6 @@ export default [
     "position": [
       246, 0
     ],
-    "dimension": 1
+    "dimension": dim.end
   }
 ]

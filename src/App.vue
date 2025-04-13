@@ -4,13 +4,15 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { dimID } from './definitions/index';
 
-import markers from './data/markers.js';
+import markerList from './data/markers.js';
 
 import PositionOverlay from "./components/PositionOverlay.vue"
 import DimensionToggle from "./components/DimensionToggle.vue";
 
 const x = ref(0), z = ref(0), dim = ref("overworld");
 const mouseX = ref(null), mouseZ = ref(null);
+
+const markers = []
 
 const icon = {
   marker: L.icon({
@@ -90,7 +92,7 @@ onMounted(() => {
       tileSize: 256,
       noWrap: true,
       maxZoom: 8,
-      minNativeZoom: 2,
+      minNativeZoom: 1,
       maxNativeZoom: 5,
       attribution: "The Nether - ScJPMC World Map exported from Xaero's World Map mod"
     }),
@@ -99,7 +101,7 @@ onMounted(() => {
       noWrap: true,
       minZoom: -1,
       maxZoom: 8,
-      minNativeZoom: 2,
+      minNativeZoom: 1,
       maxNativeZoom: 5,
       attribution: "The End - ScJPMC World Map exported from Xaero's World Map mod"
     }),
@@ -112,24 +114,44 @@ onMounted(() => {
     layers: [layers[dim.value]]
   });
 
-  markers.filter(i => {
-    if (Array.isArray(i)) {
-      return i.dimension.includes(dimID[dim.value])
-    }
-    return i.dimension === dimID[dim.value]
-  }).forEach(item => {
+  markerList.forEach(item => {
     const pos = item.position;
     const posDevide = pos[2] === -1 ? 8 : 1;
-    L.marker(posMCToMap([
+
+    let title = item.name;
+    if (item.url) {
+      title = `<a
+        href="${item.url}"
+        target="_blank" 
+        rel="noopener noreferrer" 
+        style=" text-decoration: none; ">${item.name}</a>`;
+    }
+
+    item.marker = L.marker(posMCToMap([
       pos[0] / posDevide + .5,
       pos[1] / posDevide + .5
     ]), {
       icon: icon.marker
-    }).bindPopup(`<center>${item.name}<br><small>${item.position.join(' ')}</small></center>`)
+    }).bindPopup(`<center>${title}<br><small>${item.position.join(' ')}</small></center>`)
       .openPopup()
-      .addTo(map);
+      markers.push(item)
   });
-  
+
+  const filterMarkers = (dim) => {
+    if (typeof dim === "string") dim = dimID[dim]
+    markers.forEach(i => {
+      if (Array.isArray(i) ?
+        i.dimension.includes(dim) :
+        i.dimension === dim
+      ) {
+        i.marker.addTo(map)
+      } else {
+        i.marker.removeFrom(map)
+      }
+    })
+  }
+
+  filterMarkers(dim.value)
 
   const updatePosition = () => {
     const c = map.getCenter();
@@ -155,31 +177,39 @@ onMounted(() => {
     const currentDim = dimID[dim.value]
     if (currentDim === id) return;
     positions[currentDim] = [x.value, z.value];
-    console.log(JSON.stringify(positions,null,2))
+    
+    const newDimName = Object.entries(dimID).find(i => i[1] === id)?.at(0);
+    const newLayer = layers[newDimName];
+    
+    const newZoom = Math.min(Math.max(newLayer.options.minZoom, zoom), newLayer.options.maxZoom)
 
     if (currentDim === 0 && id === -1) {
       map.setView(posMCToMap(
         [x.value / 8, z.value / 8]
-      ))
+      ), newZoom, { animate: false })
     } else if (currentDim === -1 && id === 0) {
       map.setView(posMCToMap(
         [x.value * 8, z.value * 8]
-      ))
+      ), newZoom, { animate: false })
     } else {
       map.setView(posMCToMap([
         positions[id]?.at(0) ?? 0,
         positions[id]?.at(1) ?? 0,
-      ]))
+      ]), newZoom, { animate: false })
     }
-    const newDimName = Object.entries(dimID).find(i => i[1] === id)?.at(0);
 
     map.removeLayer(layers[dim.value]);
-    map.addLayer(layers[newDimName]);
+    map.addLayer(newLayer);
+
+    filterMarkers(id)
 
     dim.value = newDimName;
     const pos = updatePosition();
     zoom = map.getZoom();
     updateParams(pos, zoom, dim.value);
+
+    mouseX.value = x.value;
+    mouseZ.value = z.value;
   }
 
   map.on('move zoom', updatePosition)
@@ -189,6 +219,11 @@ onMounted(() => {
     const pos = updatePosition();
     zoom = map.getZoom();
     updateParams(pos, zoom, dim.value);
+  })
+
+  map.on('mouseout', () => {
+    mouseX.value = x.value;
+    mouseZ.value = z.value;
   })
 });
 </script>
