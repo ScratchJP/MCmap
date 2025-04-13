@@ -1,6 +1,8 @@
 # ScJPMC map / ScJPマイクラ鯖マップ
 ScJPマイクラ鯖マップ、**新バージョン**です。<small>*旧バージョン：[ScratchJP/mcscrmap_classic](https://github.com/scratchjp/mcscrmap_classic)*</small>
 
+[![Netlify Status](https://api.netlify.com/api/v1/badges/97747a4a-b3fa-40c2-8fe6-68199196ef0a/deploy-status)](https://app.netlify.com/sites/scjpmcmap/deploys)
+
 ## 概要
 ScJPMCサーバーのスペックはよわよわで、dynmapもbluemapも導入されてはさよならされる運命でした。\
 だったら自分たちでマップを作っちゃおうと思ったわけです。
