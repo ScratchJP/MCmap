@@ -108,5 +108,117 @@ export default [
       246, 0
     ],
     "dimension": dim.end
-  }
+  },
+  {
+    "name": "クリーパートラップ",
+    "position": [
+      -662, -1293
+    ],
+    "dimension": [ dim.overworld, dim.nether ]
+  },
+  {
+    name: "サトウキビファーム",
+    position: [
+      3237, 63, 75
+    ],
+    dimension: [ dim.overworld ],
+    url: "https://www.mcscr.jp/facility/suikelp/sugar_cane_farm/"
+  },
+  {
+    name: "クリーパーファーム",
+    position: [
+      3278, 63, 74
+    ],
+    dimension: [ dim.overworld ],
+    url: "https://www.mcscr.jp/facility/suikelp/creeper_farm/"
+  },
+  {
+    name: "ツリーファーム\n骨粉ファーム\n天空トラップタワー",
+    position: [
+      3289, 187, 72
+    ],
+    dimension: [ dim.overworld ],
+    url: "https://www.mcscr.jp/facility/suikelp/tbmf/"
+  },
+  {
+    name: "阿班銀行本店(001)",
+    position: [
+      100, 48, 65
+    ],
+    dimension: [ dim.overworld ],
+    url: "https://www.mcscr.jp/facility/scjp/aspoubank_001/"
+  },
+  {
+    name: "アイアンファーム",
+    position: [
+      3251, 65, 124
+    ],
+    dimension: [ dim.overworld ],
+    url: "https://www.mcscr.jp/facility/suikelp/iron_farm/"
+  },
+  {
+    name: "カボチャファーム",
+    position: [
+      3211, 63, 50
+    ],
+    dimension: [ dim.overworld ],
+    url: "https://www.mcscr.jp/facility/suikelp/pumpkin_farm/"
+  },
+  {
+    name: "ScJP一周年記念館",
+    position: [
+      153, 112, 356
+    ],
+    dimension: [ dim.overworld ],
+    url: "https://www.mcscr.jp/facility/scjp/oneanv/",
+    icon: "museum",
+  },
+  {
+    name: "ScJP市役所",
+    region: "scjp",
+    position: [
+      74, 93, 110
+    ],
+    dimension: [ dim.overworld ],
+    icon: "town_hall",
+  },
+  {
+    name: "阿斑市役所",
+    region: "aspou",
+    position: [
+      -628, 76, -226
+    ],
+    dimension: [ dim.overworld ],
+    icon: "town_hall",
+  },
+  {
+    name: "ユニバーサルツリーファーム跡",
+    region: "rikubate",
+    position: [
+      -527, 64, -448
+    ],
+    dimension: [ dim.overworld ],
+    url: "https://www.mcscr.jp/facility/rikubate/utf/",
+    icon: "marker",
+  },
+  {
+    name: "露天掘り刑執行場",
+    region: "",
+    position: [
+      2551, -62, 2568
+    ],
+    dimension: [ dim.overworld ],
+    url: "",
+    icon: "marker",
+  },
+  {
+    name: "露天掘り場付近トラップタワー",
+    region: "",
+    position: [
+      2520, 101, 2570
+    ],
+    dimension: [ dim.overworld ],
+    url: "",
+    icon: "marker",
+  },
 ]

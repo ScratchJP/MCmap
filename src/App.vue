@@ -5,6 +5,7 @@ import "leaflet/dist/leaflet.css";
 import { dimID } from './definitions/index';
 
 import markerList from './data/markers.js';
+import icons from './data/icons.js';
 
 import PositionOverlay from "./components/PositionOverlay.vue"
 import DimensionToggle from "./components/DimensionToggle.vue";
@@ -14,15 +15,11 @@ const mouseX = ref(null), mouseZ = ref(null);
 
 const markers = []
 
-const icon = {
-  marker: L.icon({
-    iconUrl: "./assets/icon/marker.png",
-    iconSize: 32,
-    iconAnchor: [16, 32],
-    popupAnchor: [0, -24],
-    tooltipAnchor: [0, -24],
-  }),
+const icon = {}
+for (let ico in icons) {
+  icon[ico] = L.icon(icons[ico])
 }
+
 const posMapToMC = (position) => {
   return [
     position[1] * 8,
@@ -34,6 +31,24 @@ const posMCToMap = (position) => {
     position[1] / -8, 
     position[0] / 8
   ];
+}
+const position = (axis, pos, y, z) => {
+  if (axis === 2) {
+    if (z) return [pos, z]
+    if (Array.isArray(pos)) {
+      if (pos.length === 3) return [pos[0], pos[2]]
+      return pos
+    }
+    return [pos, y]
+  }
+  if (axis === 3) {
+    if (z) return [pos, y, z]
+    if (Array.isArray(pos)) {
+      if (pos.length === 2) return [pos[0], null, pos[1]]
+      return pos
+    }
+    return [pos, null, y]
+  }
 }
 let dimToggle = () => {};
 const dimensions = [
@@ -124,15 +139,15 @@ onMounted(() => {
         href="${item.url}"
         target="_blank" 
         rel="noopener noreferrer" 
-        style=" text-decoration: none; ">${item.name}</a>`;
+        style=" text-decoration: none; ">${item.name.replace(/\r?\n/g, "<br/>")}</a>`;
     }
 
     item.marker = L.marker(posMCToMap([
       pos[0] / posDevide + .5,
       pos[1] / posDevide + .5
     ]), {
-      icon: icon.marker
-    }).bindPopup(`<center>${title}<br><small>${item.position.join(' ')}</small></center>`)
+      icon: icon[item.icon] ?? icon.marker
+    }).bindPopup(`<center>${title}<br><small>${position(3, item.position).map(p => p ?? "(?)").join(' ')}</small></center>`)
       .openPopup()
       markers.push(item)
   });
@@ -140,11 +155,18 @@ onMounted(() => {
   const filterMarkers = (dim) => {
     if (typeof dim === "string") dim = dimID[dim]
     markers.forEach(i => {
-      if (Array.isArray(i) ?
+      if (Array.isArray(i.dimension) ?
         i.dimension.includes(dim) :
         i.dimension === dim
       ) {
         i.marker.addTo(map)
+        if (dim === dimID.nether){
+          i.marker.setLatLng(
+            posMCToMap(position(2, i.position).map(n => n / 8))
+          ) 
+        } else {
+          i.marker.setLatLng(posMCToMap(position(2, i.position)))
+        }
       } else {
         i.marker.removeFrom(map)
       }

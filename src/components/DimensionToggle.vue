@@ -8,8 +8,11 @@ defineProps({
 </script>
 
 <template>
-  <a class="button">
-    <img :alt="name" :src="icon" class="button-icon">
+  <a class="button" :title="name">
+    <img 
+      :alt="name" 
+      :src="icon" 
+      class="button-icon">
   </a>
 </template>
 
