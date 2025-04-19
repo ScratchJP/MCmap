@@ -2,16 +2,20 @@
 import { onMounted, ref } from "vue";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { dimID } from './definitions/index';
+import "leaflet-editable";
+import * as turf from "@turf/turf";
 
+import { dimID } from './definitions/index';
 import markerList from './data/markers.js';
 import icons from './data/icons.js';
+import geojson from './data/geojson.js';
 
 import PositionOverlay from "./components/PositionOverlay.vue"
 import DimensionToggle from "./components/DimensionToggle.vue";
 
 const x = ref(0), z = ref(0), dim = ref("overworld");
 const mouseX = ref(null), mouseZ = ref(null);
+const debugMode = ref(false);
 
 const markers = []
 
@@ -28,8 +32,8 @@ const posMapToMC = (position) => {
 }
 const posMCToMap = (position) => {
   return [
-    position[1] / -8, 
-    position[0] / 8
+    (position[1] + .5) / -8, 
+    (position[0] + .5) / 8
   ];
 }
 const position = (axis, pos, y, z) => {
@@ -69,6 +73,10 @@ const dimensions = [
   },
 ];
 
+const getFeatureCenter = (feature) => {
+  const centroid = turf.centroid(feature);
+  return centroid.geometry.coordinates.reverse();
+}
 
 onMounted(() => {
   const positions = {};
@@ -126,35 +134,106 @@ onMounted(() => {
     crs: L.CRS.Simple,
     center: [x.value, z.value],
     zoom: zoom,
-    layers: [layers[dim.value]]
+    zoomSnap: 1,
+    layers: [layers[dim.value]],
+    editable: true
   });
+  document.addEventListener('keydown', e => {
+    switch (e.code) {
+      case "F3": {
+        e.preventDefault();
+        debugMode.value = !debugMode.value;
+        return;
+      }
+    }
+  })
+  map.on('keydown', e => {
+    const event = e.originalEvent;
+    console.log(debugMode.value, event.code)
+    switch (event.code) {
+      case "KeyL": {
+        if (!debugMode.value) return;
+        map.editTools.startPolyline();
+        return;
+      }
+      case "KeyG": {
+        if (!debugMode.value) return;
+        map.editTools.startPolygon();
+        return;
+      }
+    }
+  })
+  map.on('click', e => {
+    const event = e.originalEvent;
+  })
+  map.on('editable:drawing:end', e => {
+    e.layer.on('click', ev => {
+      if (ev.originalEvent.ctrlKey) {
+        navigator.clipboard.writeText(
+          JSON.stringify(e.layer.toGeoJSON())
+        ).then(() => {
+          L.tooltip(ev.latlng, { content: "GeoJSON copied!" })
+            .addTo(map);
+        })
+      }
+    })
+  })
+
+  const geoJSONLayer = L.geoJSON(geojson, {
+  }).addTo(map);
+
+  const addRegionLabels = (geojsonLayer) => {
+    geojsonLayer.eachLayer((layer) => {
+      if (layer.feature.geometry.type === "Polygon") {
+        const center = getFeatureCenter(layer.feature);
+        const classes = ['region-label']
+        if (layer.feature.properties.district) classes.push('region-label-small');
+        const label = L.marker(center, {
+          icon: L.divIcon({
+            className: classes.join(' '),
+            html: `<span>${layer.feature.properties.name}</span>`,
+            iconSize: null,
+          }),
+          zIndexOffset: 64,
+          interactive: false,
+        }).addTo(map);
+      }
+    });
+  }
+
+  addRegionLabels(geoJSONLayer)
 
   markerList.forEach(item => {
     const pos = item.position;
     const posDevide = pos[2] === -1 ? 8 : 1;
 
-    let title = item.name;
+    let title = item.name.replace(/\r?\n/g, "<br/>");
     if (item.url) {
       title = `<a
         href="${item.url}"
         target="_blank" 
         rel="noopener noreferrer" 
-        style=" text-decoration: none; ">${item.name.replace(/\r?\n/g, "<br/>")}</a>`;
+        style=" text-decoration: none; ">${title}</a>`;
     }
+
+    const markerIcon = icon[item.icon] ?? icon.marker;
 
     item.marker = L.marker(posMCToMap([
       pos[0] / posDevide + .5,
       pos[1] / posDevide + .5
     ]), {
-      icon: icon[item.icon] ?? icon.marker
+      icon: markerIcon,
+      zIndexOffset: markerIcon === icon.marker * 5,
     }).bindPopup(`<center>${title}<br><small>${position(3, item.position).map(p => p ?? "(?)").join(' ')}</small></center>`)
       .openPopup()
       markers.push(item)
   });
 
   const filterMarkers = (dim) => {
+    if (typeof dim === "boolean") return dim;
     if (typeof dim === "string") dim = dimID[dim]
     markers.forEach(i => {
+      if (!i.visible) return false;
       if (Array.isArray(i.dimension) ?
         i.dimension.includes(dim) :
         i.dimension === dim
@@ -171,6 +250,13 @@ onMounted(() => {
         i.marker.removeFrom(map)
       }
     })
+
+    geoJSONLayer.clearLayers();
+    geoJSONLayer.addData(geojson.filter(feature => {
+      const dims = feature.properties.dimension ?? feature.properties.dimensions;
+      if (Array.isArray(dims)) return dims.includes(dim);
+      return dims === dim;
+    }))
   }
 
   filterMarkers(dim.value)
@@ -189,7 +275,7 @@ onMounted(() => {
       const touch = event.originalEvent.touches[0];
       mousePos = map.mouseEventToLatLng(touch);
     } else {
-      mousePos = map.mouseEventToLatLng(event.originalEvent);
+      mousePos = event.latlng;
     }
     const pos = posMapToMC([mousePos.lat, mousePos.lng]);
     mouseX.value = pos[0], mouseZ.value = pos[1];
@@ -257,6 +343,7 @@ onMounted(() => {
       <PositionOverlay
         :x="mouseX ?? posMapToMC([0, z])[0]"
         :z="mouseZ ?? posMapToMC([x, 0])[1]"
+        :debug="debugMode"
       />
     </div>
     <div class="overlay-top overlay-right">
@@ -271,6 +358,10 @@ onMounted(() => {
   </div>
 </template>
 <style>
+.blur {
+  filter: blur(5px);
+}
+
 #map {
   height: 100dvh;
   background: #000;
@@ -325,5 +416,31 @@ onMounted(() => {
   border-bottom: none;
   border-bottom-left-radius:  2px; 
   border-bottom-right-radius: 2px;
+}
+
+#map .leaflet-div-icon {
+  width:0;
+  height:0;
+  border: 0;
+  padding: 0;
+}
+
+.region-label {
+  height: auto;
+  width: auto;
+  font-size: 16px;
+  white-space: nowrap;
+  color: #ffffffb9;
+  text-shadow: 0 0 4px black;
+  text-align: center;
+  width: auto;
+  height: auto;
+}
+.region-label-small {
+  font-size: 13px;
+}
+.region-label span {
+  display: inline-block;
+  transform: translate(-50%, -50%);
 }
 </style>

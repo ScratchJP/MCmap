@@ -8,6 +8,13 @@ export default {
   },
   town_hall: {
     iconUrl: "/assets/icon/town_hall.png",
+    iconSize: 24,
+    iconAnchor: [12, 12],
+    popupAnchor: [0, -12],
+    tooltipAnchor: [0, -12],
+  },
+  city_hall: {
+    iconUrl: "/assets/icon/city_hall.png",
     iconSize: 16,
     iconAnchor: [8, 8],
     popupAnchor: [0, -8],
@@ -40,5 +47,12 @@ export default {
     iconAnchor: [12, 12],
     popupAnchor: [0, -10],
     tooltipAnchor: [0, -10],
+  },
+  bank: {
+    iconUrl: "/assets/icon/bank.png",
+    iconSize: 24,
+    iconAnchor: [12, 12],
+    popupAnchor: [0, -12],
+    tooltipAnchor: [0, -12],
   },
 }
