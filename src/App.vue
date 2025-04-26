@@ -96,8 +96,9 @@ onMounted(() => {
   ])
   x.value = pos[0];
   z.value = pos[1];
-  let zoom = parseFloat(params.get('zoom')) ||
-    Math.log2(parseFloat(params.get('s')) * 2) + 2 || 3;
+  let zoom = parseFloat(params.get('zoom')) ??
+    (Math.log2(parseFloat(params.get('s')) * 2) + 2 // legacy map zoom query
+    || 3);
   dim.value = params.get('dim') || "overworld";
 
   updateParams(posMapToMC(pos), zoom, dim.value);
@@ -182,6 +183,8 @@ onMounted(() => {
   const geoJSONLayer = L.geoJSON(geojson, {
   }).addTo(map);
 
+  const geoJSONMarkers = {};
+
   const addRegionLabels = (geojsonLayer) => {
     geojsonLayer.eachLayer((layer) => {
       if (layer.feature.geometry.type === "Polygon") {
@@ -197,6 +200,7 @@ onMounted(() => {
           zIndexOffset: 64,
           interactive: false,
         }).addTo(map);
+        geoJSONMarkers[layer.feature.properties.name] = label;
       }
     });
   }
@@ -254,8 +258,12 @@ onMounted(() => {
     geoJSONLayer.clearLayers();
     geoJSONLayer.addData(geojson.filter(feature => {
       const dims = feature.properties.dimension ?? feature.properties.dimensions;
-      if (Array.isArray(dims)) return dims.includes(dim);
-      return dims === dim;
+      let addOrRemove = Array.isArray(dims) ?
+        dims.includes(dim) : dims === dim;
+      const label = geoJSONMarkers[feature.properties.name];
+      if (addOrRemove) { label.addTo(map) }
+        else { label.removeFrom(map) }
+      return addOrRemove
     }))
   }
 

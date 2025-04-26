@@ -71,7 +71,7 @@ export default [
     ],
     "dimension": 0,
     "url": "https://www.mcscr.jp/region/arlgonIsland",
-    visible: true,
+    visible: false,
   },
   {
     "name": "UXRCF市",
