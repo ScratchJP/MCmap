@@ -99,6 +99,7 @@ onMounted(() => {
   let zoom = parseFloat(params.get('zoom')) ??
     (Math.log2(parseFloat(params.get('s')) * 2) + 2 // legacy map zoom query
     || 3);
+  if (isNaN(zoom)) zoom = 3;
   dim.value = params.get('dim') || "overworld";
 
   updateParams(posMapToMC(pos), zoom, dim.value);
