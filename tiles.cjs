@@ -44,8 +44,38 @@ async function mapSplit(dimension) {
             if (data.every(p => p === 0)) {
               console.log(pos[0] + size * i, pos[1] + size * j, output, `Lv${level} Extracted, blank.`)
             } else {
-              resImg.clone().toFile(path.join(outputDir, output), er => {})
-              console.log(pos[0] + size * i, pos[1] + size * j, output, `Lv${level} Extracted!`)
+              if (fs.existsSync(path.join(outputDir, output))) {
+                const result = await resImg
+                  .clone()
+                  .ensureAlpha()
+                  .raw()
+                  .toBuffer({ resolveWithObject: true })
+                  .then(({ data, info }) => {
+                    for (let i = 0; i < data.length; i += 4) {
+                      if ( data[i] === 0 && data[i + 1] === 0 && data[i + 2] === 0) {
+                        data[i + 3] = 0;
+                      }
+                    }
+                    return sharp(data, { raw: {
+                      width: info.width,
+                      height: info.height,
+                      channels: 4
+                    }})
+                  }).then(image => image.png().toBuffer());
+                sharp(path.join(outputDir, output))
+                  .composite([
+                    {
+                      input: result,
+                      top: 0, left: 0
+                    }
+                  ]).toFile(path.join(outputDir, output), er => {});
+                console.log(pos[0] + size * i, pos[1] + size * j, output, `Lv${level} Extracted, merged!`)
+              } else {
+                resImg
+                  .clone()
+                  .toFile(path.join(outputDir, output), er => {});
+                console.log(pos[0] + size * i, pos[1] + size * j, output, `Lv${level} Extracted!`)
+              }
             }
           }
         }
@@ -110,9 +140,40 @@ async function mapSplit(dimension) {
       }).composite(images)
       .png()
       .toBuffer();
-      await sharp(combined)
-      .resize(256, 256)
-      .toFile(path.join(outputDir, "1", dimension, imgName));
+
+      const output = path.join(outputDir, "1", dimension, imgName)
+
+      if (fs.existsSync(output)) {
+        const result = await sharp(combined)
+          .ensureAlpha()
+          .raw()
+          .toBuffer({ resolveWithObject: true })
+          .then(({ data, info }) => {
+            for (let i = 0; i < data.length; i += 4) {
+              if ( data[i] === 0 && data[i + 1] === 0 && data[i + 2] === 0) {
+                data[i + 3] = 0;
+              }
+            }
+            return sharp(data, { raw: {
+              width: info.width,
+              height: info.height,
+              channels: 4
+            }})
+          }).then(image => image.png().toBuffer());
+
+        sharp(path.join(output))
+          .composite([
+            {
+              input: result,
+              top: 0, left: 0
+            }
+          ]).toFile(output, er => {});
+        
+      } else {
+        await sharp(combined)
+        .resize(256, 256)
+        .toFile(output);
+      }
       console.log(imgName);
     }
   }
