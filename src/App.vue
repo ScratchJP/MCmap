@@ -5,7 +5,7 @@ import "leaflet/dist/leaflet.css";
 import "leaflet-editable";
 import * as turf from "@turf/turf";
 
-import { dimID } from './definitions/index';
+import { dimID, dimWorld } from './definitions/index';
 import markerList from './data/markers.js';
 import icons from './data/icons.js';
 import geojson from './data/geojson.js';
@@ -13,11 +13,15 @@ import geojson from './data/geojson.js';
 import PositionOverlay from "./components/PositionOverlay.vue"
 import DimensionToggle from "./components/DimensionToggle.vue";
 
+const bluemapHost = import.meta.env.VITE_BLUEMAP_HOST;
+
 const x = ref(0), z = ref(0), dim = ref("overworld");
 const mouseX = ref(null), mouseZ = ref(null);
 const debugMode = ref(false);
 
 const markers = []
+
+const players = ref([]);
 
 const icon = {}
 for (let ico in icons) {
@@ -136,7 +140,7 @@ onMounted(() => {
     crs: L.CRS.Simple,
     center: [x.value, z.value],
     zoom: zoom,
-    zoomSnap: 1,
+    zoomSnap: 0,
     layers: [layers[dim.value]],
     editable: true
   });
@@ -342,6 +346,24 @@ onMounted(() => {
     mouseX.value = x.value;
     mouseZ.value = z.value;
   })
+
+  /*
+  setInterval(async () => {
+    try {
+      console.log(bluemapHost)
+      // try fetching bluemap live player data
+      const livePlayersRequest = await fetch(new URL(`/maps/${dimWorld[dim.value]}/live/players.json?`, bluemapHost), {
+        method: 'GET'
+      });
+      const livePlayersData = await livePlayersRequest.json();
+
+      players.value = livePlayersData;
+      console.log(players.value)
+    } catch (err) {
+      console.error(err);
+    }
+  }, 1_000)
+  */
 });
 </script>
 
