@@ -140,9 +140,8 @@ onMounted(() => {
     crs: L.CRS.Simple,
     center: [x.value, z.value],
     zoom: zoom,
-    zoomSnap: 0,
     layers: [layers[dim.value]],
-    editable: true
+    editable: true,
   });
   document.addEventListener('keydown', e => {
     switch (e.code) {
