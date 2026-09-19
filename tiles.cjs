@@ -3,177 +3,202 @@ const path = require('path');
 const readline = require('node:readline');
 const sharp = require('sharp');
 
-async function mapSplit(dimension) {
-  const inputDir = `./src/input/${dimension}`;
-  const files = fs.readdirSync(inputDir);
-  const outputDir = './public/map'
-  
-  /* fs.readdirSync(outputDir)
-    .forEach(file => fs.unlinkSync(path.join(outputDir, file))); */
-  for (let k in files) {
-    const pos = files[k].match(/(x|z)-?\d+/g)
-      ?.sort((a,b) => b.startsWith("x") - a.startsWith("x"))
-      ?.map(i => parseInt(i.replace(/^(x|z)/g, "")));
-    if (pos) {
-      const image = sharp(path.join(inputDir, files[k]));
+function ensureDir(dirPath) {
+  fs.mkdirSync(dirPath, { recursive: true });
+}
 
+async function stripBlackToAlpha(imageBuffer, width, height) {
+  const data = Buffer.from(imageBuffer);
+
+  for (let i = 0; i < data.length; i += 4) {
+    if (data[i] === 0 && data[i + 1] === 0 && data[i + 2] === 0) {
+      data[i + 3] = 0;
+    }
+  }
+
+  return sharp(data, {
+    raw: {
+      width,
+      height,
+      channels: 4
+    }
+  }).png().toBuffer();
+}
+
+async function mapSplit(dimension) {
+  const inputDir = path.join(__dirname, 'src', 'input', dimension);
+  const files = fs.readdirSync(inputDir);
+  const outputDir = path.join(__dirname, 'public', 'map');
+  ensureDir(outputDir);
+
+  for (const file of files) {
+    const pos = file.match(/(x|z)-?\d+/g)
+      ?.sort((a, b) => b.startsWith('x') - a.startsWith('x'))
+      ?.map(i => parseInt(i.replace(/^(x|z)/g, ''), 10));
+
+    if (pos) {
+      const image = sharp(path.join(inputDir, file));
       const metadata = await image.clone().metadata();
 
-      if (metadata.width !== 1024 || metadata.height !== 1024) throw new Error('make sure you have a 1024x1024 image.');
-
-      // sometimes top % 1024 !== 0
+      if (metadata.width !== 1024 || metadata.height !== 1024) {
+        throw new Error(`make sure you have a 1024x1024 image: ${file}`);
+      }
 
       for (let level = 2; level <= 5; level++) {
-        console.log(`Current Zoom Level: ${level}`)
+        console.log(`Current Zoom Level: ${level}`);
         const size = 2048 / 2 ** level;
-        if (!fs.existsSync(path.join(outputDir, `/${level}/${dimension}`))) {
-          fs.mkdirSync(path.join(outputDir, `/${level}/${dimension}`));
-        }
+        const levelDir = path.join(outputDir, String(level), dimension);
+        ensureDir(levelDir);
+
         for (let i = 0; i < 2 ** (level - 1); i++) {
           for (let j = 0; j < 2 ** (level - 1); j++) {
-            const output = `/${level}/${dimension}/${(pos[0] + size * i) / size}_${(pos[1] + size * j) / size}.png`;
+            const output = path.join(levelDir, `${(pos[0] + size * i) / size}_${(pos[1] + size * j) / size}.png`);
             const resImg = await image
               .clone()
               .extract({ left: size * i, top: size * j, width: size, height: size })
-              .resize(256, 256, { kernel: "nearest" });
+              .resize(256, 256, { kernel: 'nearest' });
             const { data } = await resImg
               .clone()
               .greyscale()
               .raw()
               .toBuffer({ resolveWithObject: true });
+
             if (data.every(p => p === 0)) {
-              console.log(pos[0] + size * i, pos[1] + size * j, output, `Lv${level} Extracted, blank.`)
+              console.log(pos[0] + size * i, pos[1] + size * j, output, `Lv${level} Extracted, blank.`);
+            } else if (fs.existsSync(output)) {
+              const result = await resImg
+                .clone()
+                .ensureAlpha()
+                .raw()
+                .toBuffer({ resolveWithObject: true })
+                .then(({ data, info }) => stripBlackToAlpha(data, info.width, info.height));
+
+              const existingTile = await sharp(output)
+                .ensureAlpha()
+                .raw()
+                .toBuffer({ resolveWithObject: true })
+                .then(({ data, info }) => stripBlackToAlpha(data, info.width, info.height));
+
+              const mergedTile = await sharp(existingTile)
+                .composite([
+                  {
+                    input: result,
+                    top: 0,
+                    left: 0
+                  }
+                ])
+                .png()
+                .toBuffer();
+
+              await sharp(mergedTile).toFile(output);
+
+              console.log(pos[0] + size * i, pos[1] + size * j, output, `Lv${level} Extracted, merged!`);
             } else {
-              if (fs.existsSync(path.join(outputDir, output))) {
-                const result = await resImg
-                  .clone()
-                  .ensureAlpha()
-                  .raw()
-                  .toBuffer({ resolveWithObject: true })
-                  .then(({ data, info }) => {
-                    for (let i = 0; i < data.length; i += 4) {
-                      if ( data[i] === 0 && data[i + 1] === 0 && data[i + 2] === 0) {
-                        data[i + 3] = 0;
-                      }
-                    }
-                    return sharp(data, { raw: {
-                      width: info.width,
-                      height: info.height,
-                      channels: 4
-                    }})
-                  }).then(image => image.png().toBuffer());
-                sharp(path.join(outputDir, output))
-                  .composite([
-                    {
-                      input: result,
-                      top: 0, left: 0
-                    }
-                  ]).toFile(path.join(outputDir, output), er => {});
-                console.log(pos[0] + size * i, pos[1] + size * j, output, `Lv${level} Extracted, merged!`)
-              } else {
-                resImg
-                  .clone()
-                  .toFile(path.join(outputDir, output), er => {});
-                console.log(pos[0] + size * i, pos[1] + size * j, output, `Lv${level} Extracted!`)
-              }
+              await resImg.clone().toFile(output);
+              console.log(pos[0] + size * i, pos[1] + size * j, output, `Lv${level} Extracted!`);
             }
           }
         }
       }
     } else {
-      console.log(files[k], "Skipped. Is this really an exported image?")
+      console.log(file, 'Skipped. Is this really an exported image?');
     }
 
-    // level 1
-    if (!fs.existsSync(path.join(outputDir, "1", dimension))) {
-      fs.mkdirSync(path.join(outputDir, "1", dimension));
+    ensureDir(path.join(outputDir, '1', dimension));
+
+    const lv2Path = path.join(outputDir, '2', dimension);
+    if (!fs.existsSync(lv2Path)) {
+      continue;
     }
 
-    const Lv2Path = path.join(outputDir, "2", dimension);
-    const filesLv2 = fs.readdirSync(Lv2Path);
-
+    const filesLv2 = fs.readdirSync(lv2Path);
     const emptyTile = await sharp({
       create: {
         width: 256,
         height: 256,
-        channels: 3,
-        background: '#000000'
+        channels: 4,
+        background: { r: 0, g: 0, b: 0, alpha: 0 }
       }
-    }).png().toBuffer()
-  
+    }).png().toBuffer();
+
     while (filesLv2.length) {
       const targetImg = filesLv2[0];
-      const pos = targetImg.split('_').map(i=>parseInt(i));
+      const pos = targetImg.split('_').map(i => parseInt(i, 10));
       if (!pos) {
-        console.log(targetImg, "Skipped. Is this really an exported image?")
+        console.log(targetImg, 'Skipped. Is this really an exported image?');
         return;
       }
+
       if (pos[0] % 2) pos[0]--;
       if (pos[1] % 2) pos[1]--;
+
       const images = [];
       [
-        { input: path.join(Lv2Path, `${pos[0]+0}_${pos[1]+0}.png`), top: 0, left: 0 },
-        { input: path.join(Lv2Path, `${pos[0]+0}_${pos[1]+1}.png`), top: 256, left: 0 },
-        { input: path.join(Lv2Path, `${pos[0]+1}_${pos[1]+0}.png`), top: 0, left: 256 },
-        { input: path.join(Lv2Path, `${pos[0]+1}_${pos[1]+1}.png`), top: 256, left: 256 },
+        { input: path.join(lv2Path, `${pos[0] + 0}_${pos[1] + 0}.png`), top: 0, left: 0 },
+        { input: path.join(lv2Path, `${pos[0] + 0}_${pos[1] + 1}.png`), top: 256, left: 0 },
+        { input: path.join(lv2Path, `${pos[0] + 1}_${pos[1] + 0}.png`), top: 0, left: 256 },
+        { input: path.join(lv2Path, `${pos[0] + 1}_${pos[1] + 1}.png`), top: 256, left: 256 }
       ].forEach(img => {
         if (fs.existsSync(img.input)) {
-          console.log(filesLv2.findIndex(i => i === path.basename(img.input)),fs.existsSync(img.input))
-          filesLv2.splice(filesLv2.findIndex(i => i === path.basename(img.input)), 1)
-          images.push(img)
+          filesLv2.splice(filesLv2.findIndex(i => i === path.basename(img.input)), 1);
+          images.push(img);
         } else {
-          const newImg = img;
-          newImg.input = emptyTile;
-          images.push(newImg)
+          const newImg = { ...img, input: emptyTile };
+          images.push(newImg);
         }
       });
-  
-      const imgName = `${pos[0] / 2}_${pos[1] / 2}.png`
-  
+
+      const imgName = `${pos[0] / 2}_${pos[1] / 2}.png`;
       const combined = await sharp({
         create: {
           width: 512,
           height: 512,
           channels: 4,
-          background: '#000000'
+          background: { r: 0, g: 0, b: 0, alpha: 0 }
         }
       }).composite(images)
-      .png()
-      .toBuffer();
+        .png()
+        .toBuffer();
 
-      const output = path.join(outputDir, "1", dimension, imgName)
+      const output = path.join(outputDir, '1', dimension, imgName);
 
       if (fs.existsSync(output)) {
         const result = await sharp(combined)
           .ensureAlpha()
+          .resize(256, 256)
           .raw()
           .toBuffer({ resolveWithObject: true })
-          .then(({ data, info }) => {
-            for (let i = 0; i < data.length; i += 4) {
-              if ( data[i] === 0 && data[i + 1] === 0 && data[i + 2] === 0) {
-                data[i + 3] = 0;
-              }
-            }
-            return sharp(data, { raw: {
-              width: info.width,
-              height: info.height,
-              channels: 4
-            }})
-          }).then(image => image.png().toBuffer());
+          .then(({ data, info }) => stripBlackToAlpha(data, info.width, info.height));
 
-        sharp(path.join(output))
+        const existingTile = await sharp(output)
+          .ensureAlpha()
+          .raw()
+          .toBuffer({ resolveWithObject: true })
+          .then(({ data, info }) => stripBlackToAlpha(data, info.width, info.height));
+
+        const mergedTile = await sharp(existingTile)
           .composite([
             {
               input: result,
-              top: 0, left: 0
+              top: 0,
+              left: 0
             }
-          ]).toFile(output, er => {});
-        
+          ])
+          .png()
+          .toBuffer();
+
+        await sharp(mergedTile).toFile(output);
       } else {
-        await sharp(combined)
-        .resize(256, 256)
-        .toFile(output);
+        const transparentCombined = await sharp(combined)
+          .ensureAlpha()
+          .resize(256, 256)
+          .raw()
+          .toBuffer({ resolveWithObject: true })
+          .then(({ data, info }) => stripBlackToAlpha(data, info.width, info.height));
+
+        await sharp(transparentCombined).toFile(output);
       }
+
       console.log(imgName);
     }
   }
@@ -183,49 +208,35 @@ async function mapSplit(dimension) {
 
 const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
 
-rl.question('which map image do you want to split? (default: *)\n"overworld", "nether", "end", "*" (every dimension) is recommended.\n', ans => {
+(async () => {
   try {
-    const aliases = {
-      overworld: [
-        "overworld",
-        "world",
-        "ow",
-        "o"
-      ],
-      nether: [
-        "nether",
-        "the_nether",
-        "hell",
-        "n"
-      ],
-      end: [
-        "end",
-        "the_end",
-        "e"
-      ],
-      every: [
-        "*",
-        "every",
-        "every_dimensions",
-        "everything",
-        "all"
-      ],
-    }
+    const ans = await new Promise(resolve => {
+      rl.question('which map image do you want to split? (default: *)\n"overworld", "nether", "end", "*" (every dimension) is recommended.\n', resolve);
+    });
 
-    const dimension = !ans || aliases.every.includes(ans) ? "*"
-      : aliases.overworld.includes(ans) ? "overworld"
-        : aliases.nether.includes(ans) ? "nether"
-          : aliases.end.includes(ans) ? "end" 
+    const aliases = {
+      overworld: ['overworld', 'world', 'ow', 'o'],
+      nether: ['nether', 'the_nether', 'hell', 'n'],
+      end: ['end', 'the_end', 'e'],
+      every: ['*', 'every', 'every_dimensions', 'everything', 'all']
+    };
+
+    const dimension = !ans || aliases.every.includes(ans)
+      ? '*'
+      : aliases.overworld.includes(ans)
+        ? 'overworld'
+        : aliases.nether.includes(ans)
+          ? 'nether'
+          : aliases.end.includes(ans)
+            ? 'end'
             : ans;
-    if (dimension === "*") {
-      ["overworld", "nether", "end"].forEach(async d => await mapSplit(d))
-    } else {
-      mapSplit(dimension)
-    }
-    rl.close();
-    return;
-  } catch (er) { 
+
+    const dims = dimension === '*' ? ['overworld', 'nether', 'end'] : [dimension];
+    await Promise.all(dims.map(mapSplit));
+    console.log('Tile generation complete.');
+  } catch (er) {
     console.error(er);
-    rl.close()
+  } finally {
+    rl.close();
   }
-})
+})();
