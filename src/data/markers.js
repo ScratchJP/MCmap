@@ -7,7 +7,7 @@ export default [
       10, -2
     ],
     "dimension": 0,
-    "url": "https://www.mcscr.jp/region/scjp",
+    "url": "https://season1.mcscr.jp/region/scjp",
     visible: false,
   },
   {
@@ -16,7 +16,7 @@ export default [
       -510, -190
     ],
     "dimension": 0,
-    "url": "https://www.mcscr.jp/region/aspou",
+    "url": "https://season1.mcscr.jp/region/aspou",
     visible: true,
   },
   {
@@ -25,7 +25,7 @@ export default [
       -290, -410
     ],
     "dimension": 0,
-    "url": "https://www.mcscr.jp/region/rampo",
+    "url": "https://season1.mcscr.jp/region/rampo",
     visible: true,
   },
   {
@@ -34,7 +34,7 @@ export default [
       -448, -448
     ],
     "dimension": 0,
-    "url": "https://www.mcscr.jp/region/rikubate",
+    "url": "https://season1.mcscr.jp/region/rikubate",
     visible: false,
   },
   {
@@ -43,7 +43,7 @@ export default [
       -195, -800
     ],
     "dimension": 0,
-    "url": "https://www.mcscr.jp/region/boyo",
+    "url": "https://season1.mcscr.jp/region/boyo",
     visible: false,
   },
   {
@@ -52,7 +52,7 @@ export default [
       285, 950
     ],
     "dimension": 0,
-    "url": "https://www.mcscr.jp/region/ys",
+    "url": "https://season1.mcscr.jp/region/ys",
     visible: true,
   },
   {
@@ -61,7 +61,7 @@ export default [
       3190, 80
     ],
     "dimension": 0,
-    "url": "https://www.mcscr.jp/region/suikelp",
+    "url": "https://season1.mcscr.jp/region/suikelp",
     visible: true,
   },
   {
@@ -70,7 +70,7 @@ export default [
       3600, 344
     ],
     "dimension": 0,
-    "url": "https://www.mcscr.jp/region/arlgonIsland",
+    "url": "https://season1.mcscr.jp/region/arlgonIsland",
     visible: false,
   },
   {
@@ -79,7 +79,7 @@ export default [
       872, 269
     ],
     "dimension": 0,
-    "url": "https://www.mcscr.jp/region/uxrcf",
+    "url": "https://season1.mcscr.jp/region/uxrcf",
     visible: true,
   },
   {
@@ -88,7 +88,7 @@ export default [
       -6, 1420
     ],
     "dimension": 0,
-    "url": "https://www.mcscr.jp/region/lin",
+    "url": "https://season1.mcscr.jp/region/lin",
     visible: true,
   },
   {
@@ -137,7 +137,7 @@ export default [
       3237, 63, 75
     ],
     dimension: [ dim.overworld ],
-    url: "https://www.mcscr.jp/facility/suikelp/sugar_cane_farm/",
+    url: "https://season1.mcscr.jp/facility/suikelp/sugar_cane_farm/",
     visible: true,
   },
   {
@@ -146,7 +146,7 @@ export default [
       3278, 63, 74
     ],
     dimension: [ dim.overworld ],
-    url: "https://www.mcscr.jp/facility/suikelp/creeper_farm/",
+    url: "https://season1.mcscr.jp/facility/suikelp/creeper_farm/",
     visible: true,
   },
   {
@@ -155,7 +155,7 @@ export default [
       3289, 187, 72
     ],
     dimension: [ dim.overworld ],
-    url: "https://www.mcscr.jp/facility/suikelp/tbmf/",
+    url: "https://season1.mcscr.jp/facility/suikelp/tbmf/",
     visible: true,
   },
   {
@@ -164,7 +164,7 @@ export default [
       100, 48, 65
     ],
     dimension: [ dim.overworld ],
-    url: "https://www.mcscr.jp/facility/scjp/aspoubank_001/",
+    url: "https://season1.mcscr.jp/facility/scjp/aspoubank_001/",
     icon: "bank",
     visible: true,
   },
@@ -174,7 +174,7 @@ export default [
       3251, 65, 124
     ],
     dimension: [ dim.overworld ],
-    url: "https://www.mcscr.jp/facility/suikelp/iron_farm/",
+    url: "https://season1.mcscr.jp/facility/suikelp/iron_farm/",
     visible: true,
   },
   {
@@ -183,7 +183,7 @@ export default [
       3211, 63, 50
     ],
     dimension: [ dim.overworld ],
-    url: "https://www.mcscr.jp/facility/suikelp/pumpkin_farm/",
+    url: "https://season1.mcscr.jp/facility/suikelp/pumpkin_farm/",
     visible: true,
   },
   {
@@ -192,7 +192,7 @@ export default [
       153, 112, 356
     ],
     dimension: [ dim.overworld ],
-    url: "https://www.mcscr.jp/facility/scjp/oneanv/",
+    url: "https://season1.mcscr.jp/facility/scjp/oneanv/",
     icon: "museum",
     visible: true,
   },
@@ -223,7 +223,7 @@ export default [
       -527, 64, -448
     ],
     dimension: [ dim.overworld ],
-    url: "https://www.mcscr.jp/facility/rikubate/utf/",
+    url: "https://season1.mcscr.jp/facility/rikubate/utf/",
     icon: "marker",
     visible: true,
   },
